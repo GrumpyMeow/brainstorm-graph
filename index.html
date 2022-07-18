@@ -125,7 +125,7 @@
 
                     if (showNodeName) {
                         const label = node.name;
-                        const fontSize = 12/globalScale;
+                        const fontSize = 10/globalScale;
                         ctx.font = `${fontSize}px Sans-Serif`;
                         const textWidth = ctx.measureText(label).width;
                         const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
@@ -146,9 +146,9 @@
                     }
                 })
                 .enableZoomInteraction(false)
-                .enablePanInteraction(false)
+                .enablePanInteraction(true)
                 .cooldownTicks(50)
-                .minZoom(0.5)
+                .minZoom(0.1)
                 .maxZoom(4)
                 .d3Force('charge', null)
                 .d3Force('collide', d3.forceCollide(30))
