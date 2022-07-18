@@ -1,0 +1,229 @@
+<html>
+    <head>
+        <script src="https://unpkg.com/d3-quadtree"></script>
+        <script src="https://unpkg.com/d3-force"></script>
+        <script src="https://unpkg.com/force-graph"></script>
+        <style> body { margin: 0; } </style>
+    </head>
+    <body>
+        <nav>
+            <button id="uploadData">Upload</button>
+            <button id="downloadData">Download</button>
+        </nav>
+        <div id="graph"></div>
+        <script>
+            let nodeIdCounter = 0, linkIdCounter = 0;
+            let nodes = [], links = [];
+            let dragSourceNode = null, interimLink = null;
+            const snapInDistance = 15;
+            const snapOutDistance = 40;
+            const showNodeName = true;
+            const nodeSize = 3;
+
+            const updateGraphData = () => {
+                Graph.graphData({ nodes: nodes, links: links });
+            };
+
+            const distance = (node1, node2) => {
+                return Math.sqrt(Math.pow(node1.x - node2.x, 2) + Math.pow(node1.y - node2.y, 2));
+            };
+
+            const rename = (nodeOrLink, type) => {
+                let value = prompt('Name this ' + type + ':', nodeOrLink.name);
+                if (!value) {
+                    return;
+                }
+                nodeOrLink.name = value;
+                updateGraphData();
+            };
+
+            const setInterimLink = (source, target) => {
+                let linkId = linkIdCounter ++;
+                interimLink = { id: linkId, source: source, target: target, name: 'link_' + linkId };
+                links.push(interimLink);
+                updateGraphData();
+            };
+
+            const removeLink = link => {
+                links.splice(links.indexOf(link), 1);
+            };
+
+            const removeInterimLinkWithoutAddingIt = () => {
+                removeLink(interimLink);
+                interimLink = null;
+                updateGraphData();
+            };
+
+            const removeNode = node => {
+                links.filter(link => link.source === node || link.target === node).forEach(link => removeLink(link));
+                nodes.splice(nodes.indexOf(node), 1);
+            };
+
+            const Graph = ForceGraph()
+            (document.getElementById('graph'))
+                .backgroundColor('black')
+                .linkDirectionalArrowLength(4)
+                .linkDirectionalArrowRelPos(0.5)
+                .onNodeHover((node, prevNode)=> {})
+                .onNodeDrag(dragNode => {
+                    dragSourceNode = dragNode;
+                    for (let node of nodes) {
+                        if (dragNode === node) {
+                            continue;
+                        }
+                        node.fx = node.x;
+                        node.fy = node.y
+                        // close enough: snap onto node as target for suggested link
+                        if (!interimLink && distance(dragNode, node) < snapInDistance) {
+                            setInterimLink(dragSourceNode, node);
+                        }
+                        // close enough to other node: snap over to other node as target for suggested link
+                        if (interimLink && node !== interimLink.target && distance(dragNode, node) < snapInDistance) {
+                            removeLink(interimLink);
+                            setInterimLink(dragSourceNode, node);
+                        }
+                    }
+                    // far away enough: snap out of the current target node
+                    if (interimLink && distance(dragNode, interimLink.target) > snapOutDistance) {
+                        removeInterimLinkWithoutAddingIt();
+                    }
+                })
+                .onNodeDragEnd(() => {
+                    for (let node of nodes) {
+                        node.fx = null;
+                        node.fy = null;
+                    }
+                    dragSourceNode = null;
+                    interimLink = null;
+                    updateGraphData();
+                })
+                .nodeColor(node => node === dragSourceNode || (interimLink &&
+                        (node === interimLink.source || node === interimLink.target)) ? 'orange' : null)
+                .linkColor(link => link === interimLink ? 'orange' : '#bbbbbb')
+                .linkLineDash(link => link === interimLink ? [2, 2] : [])
+                .onNodeClick((node, event) => {
+                    rename(node, 'node');
+                    updateGraphData();
+                })
+                .onNodeRightClick((node, event) => {
+                    removeNode(node);
+                    updateGraphData();
+                })
+                .onLinkClick((link, event) => rename(link, 'link'))
+                .onLinkRightClick((link, event) => removeLink(link))
+                .onBackgroundClick(event => {
+                    let coords = Graph.screen2GraphCoords(event.layerX, event.layerY);
+                    let nodeId = nodeIdCounter ++;
+                    nodes.push({ id: nodeId, x: coords.x, y: coords.y, name: 'node_' + nodeId });
+                    updateGraphData();
+                })
+                .nodeCanvasObject((node, ctx, globalScale) => {
+                    ctx.fillStyle = "blue";
+                    ctx.beginPath(); 
+                    ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false); 
+                    ctx.fill();
+
+                    if (showNodeName) {
+                        const label = node.name;
+                        const fontSize = 12/globalScale;
+                        ctx.font = `${fontSize}px Sans-Serif`;
+                        const textWidth = ctx.measureText(label).width;
+                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = "white";
+                        ctx.fillText(label, node.x, node.y + nodeSize + fontSize);
+
+                        node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+                    }
+                })
+                .nodePointerAreaPaint((node, color, ctx) => {
+                    if (showNodeName) {
+                        ctx.fillStyle = color;
+                        const bckgDimensions = node.__bckgDimensions;
+                        bckgDimensions && ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+                    }
+                })
+                .enableZoomInteraction(false)
+                .enablePanInteraction(false)
+                .cooldownTicks(50)
+                .minZoom(0.5)
+                .maxZoom(4)
+                .d3Force('charge', null)
+                .d3Force('collide', d3.forceCollide(30))
+                .d3Force("center", d3.forceCenter(0,0))
+                .d3Force("manyBody", d3.forceManyBody().strength(-1))
+                .onEngineStop(() => { if (!dragSourceNode) {Graph.zoomToFit(1000,40); }});
+
+            updateGraphData();
+
+
+            window.addEventListener('resize', function(event) {
+                let graphElement = document.getElementById('graph');
+                Graph.width(graphElement.offsetWidth);
+                Graph.height(graphElement.offsetHeight);
+            }, true);
+
+
+            document.getElementById('uploadData').addEventListener('click', function() {
+                var input = document.createElement("input");
+                input.setAttribute("type", "file");
+                input.setAttribute("accept", ".json");
+
+                input.onchange =function(event) {
+                    var uploadedFile = event.target.files[0];         
+                    if (uploadedFile) {
+                        var readFile = new FileReader();
+                        readFile.onload = function(e) { 
+                            var contents = e.target.result;
+                            var json = JSON.parse(contents);
+                            json.nodes.forEach(node => {
+                                const existingNode = nodes.find((n)=>n.name===node.name)
+                                if (!existingNode) {
+                                    nodes.push(node);
+                                }
+                            });
+
+                            json.links.forEach(link => {
+                                const linkSource = nodes.find((node)=>node.name===link.source)
+                                const linkTarget = nodes.find((node)=>node.name===link.target)
+                                const existingLink = links.find((l)=>l.source===linkSource && l.target===linkTarget);
+                                if (!existingLink) {
+                                    links.push({'name': link.name, 'value': link.value ,'source':linkSource, 'target':linkTarget});
+                                }
+                            });
+
+                            updateGraphData(); 
+
+                        };
+                        readFile.readAsText(uploadedFile);
+                    }                     
+                };
+                input.click(); // opening dialog
+                return false; // avoiding navigation
+            });
+
+            document.getElementById('downloadData').addEventListener('click', function() {
+                var download = {"nodes":[],"links":[]}
+                nodes.forEach(node=>{
+                    download.nodes.push({name:node.name});
+                    console.log(node);
+                })
+                links.forEach(link=>{
+                    download.links.push({source:link.source.name, target:link.target.name, name:link.name, value:link.value});
+                });
+                let myJson = JSON.stringify(download);
+                let element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(myJson));
+                element.setAttribute('download', 'data.json');
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+
+                return false; // avoiding navigation
+            });
+        </script>
+    </body>
+</html>
