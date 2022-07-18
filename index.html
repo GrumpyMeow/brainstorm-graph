@@ -3,12 +3,16 @@
         <script src="https://unpkg.com/d3-quadtree"></script>
         <script src="https://unpkg.com/d3-force"></script>
         <script src="https://unpkg.com/force-graph"></script>
-        <style> body { margin: 0; } </style>
+        <style> body { margin: 0; overflow: hidden;} </style>
     </head>
     <body>
         <nav>
             <button id="uploadData">Upload</button>
             <button id="downloadData">Download</button>
+            <button id="zoomIn">Zoom In</button>
+            <button id="zoomOut">Zoom Out</button>
+            <button id="zoomToFit">Zoom to Fit</button>
+            <button id="reheat">Shake</button>
         </nav>
         <div id="graph"></div>
         <script>
@@ -19,9 +23,37 @@
             const snapOutDistance = 40;
             const showNodeName = true;
             const nodeSize = 3;
+            const NODE_R = 3;
+
+            const highlightNodes = new Set();
+            const highlightLinks = new Set();
+            let hoverNode = null;
 
             const updateGraphData = () => {
+                nodes.forEach(node => {
+                     node.neighbors = []; 
+                     node.links = [];
+                })
+                links.forEach(link => {
+                    //const a = nodes[link.source];
+                    //const b = nodes[link.target];
+                    const a = nodes.find((n)=>n.name===link.source.name)
+                    const b = nodes.find((n)=>n.name===link.target.name)
+
+                    !a.neighbors && (a.neighbors = []);
+                    !b.neighbors && (b.neighbors = []);
+                    a.neighbors.push(b);
+                    b.neighbors.push(a);
+
+                    !a.links && (a.links = []);
+                    !b.links && (b.links = []);
+                    a.links.push(link);
+                    b.links.push(link);
+                });
+
                 Graph.graphData({ nodes: nodes, links: links });
+
+                
             };
 
             const distance = (node1, node2) => {
@@ -62,9 +94,16 @@
             const Graph = ForceGraph()
             (document.getElementById('graph'))
                 .backgroundColor('black')
-                .linkDirectionalArrowLength(4)
-                .linkDirectionalArrowRelPos(0.5)
-                .onNodeHover((node, prevNode)=> {})
+                .onNodeHover((node, prevNode)=> {
+                    highlightNodes.clear();
+                    highlightLinks.clear();
+                    if (node) {
+                        highlightNodes.add(node);
+                        node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
+                        node.links.forEach(link => highlightLinks.add(link));
+                    }
+                    hoverNode = node || null;
+                })
                 .onNodeDrag(dragNode => {
                     dragSourceNode = dragNode;
                     for (let node of nodes) {
@@ -101,7 +140,9 @@
                         (node === interimLink.source || node === interimLink.target)) ? 'orange' : null)
                 .linkColor(link => link === interimLink ? 'orange' : '#bbbbbb')
                 .linkLineDash(link => link === interimLink ? [2, 2] : [])
+                .linkWidth(link => highlightLinks.has(link) ? 3 : 1)
                 .onNodeClick((node, event) => {
+                    console.log(node);
                     rename(node, 'node');
                     updateGraphData();
                 })
@@ -118,6 +159,14 @@
                     updateGraphData();
                 })
                 .nodeCanvasObject((node, ctx, globalScale) => {
+
+                    if (node === hoverNode || highlightNodes.has(node) ) {
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, NODE_R * 1.4, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = 'orange';
+                        ctx.fill();
+                    }
+
                     ctx.fillStyle = "blue";
                     ctx.beginPath(); 
                     ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false); 
@@ -147,23 +196,44 @@
                 })
                 .enableZoomInteraction(false)
                 .enablePanInteraction(true)
-                .cooldownTicks(50)
+                .cooldownTicks(Infinity)
+                .cooldownTime(Infinity)
                 .minZoom(0.1)
                 .maxZoom(4)
-                //.d3Force('charge', null)
-                //.d3Force('collide', d3.forceCollide(30))
-                //.d3Force("center", d3.forceCenter(0,0))
-                //.d3Force("manyBody", d3.forceManyBody().strength(-1))
-                .onEngineStop(() => { if (!dragSourceNode) {Graph.zoomToFit(1000,40); }});
+
+                .d3Force('charge',  d3.forceManyBody().strength(-50).distanceMin(1).distanceMax(100)) 
+                .d3Force('charge2',  d3.forceManyBody().strength(10).distanceMin(100).distanceMax(Infinity));
 
             updateGraphData();
-
 
             window.addEventListener('resize', function(event) {
                 let graphElement = document.getElementById('graph');
                 Graph.width(graphElement.offsetWidth);
                 Graph.height(graphElement.offsetHeight);
             }, true);
+
+            document.getElementById('zoomIn').addEventListener('click', function() {
+                const currentZoom = Graph.zoom();
+                Graph.zoom(currentZoom * 1.1, 500);
+            });
+
+            document.getElementById('zoomOut').addEventListener('click', function() {
+                const currentZoom = Graph.zoom();
+                Graph.zoom(currentZoom / 1.1, 500);
+            });
+
+            document.getElementById('zoomToFit').addEventListener('click', function() {
+                Graph.zoomToFit(1000,40);
+            });
+            document.getElementById('reheat').addEventListener('click', function() {
+                nodes.forEach((n=>{
+                    n.x = n.x * 0.9;
+                    n.y = n.y * 0.9;
+                    n.fx = null; n.fy= null;
+                }));
+                updateGraphData();
+                Graph.d3ReheatSimulation();
+            });
 
 
             document.getElementById('uploadData').addEventListener('click', function() {
@@ -181,6 +251,9 @@
                             json.nodes.forEach(node => {
                                 const existingNode = nodes.find((n)=>n.name===node.name)
                                 if (!existingNode) {
+                                    node.val = 1;
+                                    node.fx = null;
+                                    node.fy = null;
                                     nodes.push(node);
                                 }
                             });
@@ -208,7 +281,6 @@
                 var download = {"nodes":[],"links":[]}
                 nodes.forEach(node=>{
                     download.nodes.push({name:node.name});
-                    console.log(node);
                 })
                 links.forEach(link=>{
                     download.links.push({source:link.source.name, target:link.target.name, name:link.name, value:link.value});
