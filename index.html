@@ -150,10 +150,10 @@
                 .cooldownTicks(50)
                 .minZoom(0.1)
                 .maxZoom(4)
-                .d3Force('charge', null)
-                .d3Force('collide', d3.forceCollide(30))
-                .d3Force("center", d3.forceCenter(0,0))
-                .d3Force("manyBody", d3.forceManyBody().strength(-1))
+                //.d3Force('charge', null)
+                //.d3Force('collide', d3.forceCollide(30))
+                //.d3Force("center", d3.forceCenter(0,0))
+                //.d3Force("manyBody", d3.forceManyBody().strength(-1))
                 .onEngineStop(() => { if (!dragSourceNode) {Graph.zoomToFit(1000,40); }});
 
             updateGraphData();
