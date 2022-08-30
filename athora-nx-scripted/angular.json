@@ -1,0 +1,371 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "npmScope": "athora-nx-scripted",
+  "affected": {
+    "defaultBase": "main"
+  },
+  "implicitDependencies": {
+    "package.json": {
+      "dependencies": "*",
+      "devDependencies": "*"
+    },
+    ".eslintrc.json": "*"
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": ["build", "lint", "test", "e2e"]
+      }
+    }
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"]
+    }
+  },
+  "projects": {
+    "eslint-rules": {
+      "root": "tools/eslint-rules",
+      "sourceRoot": "tools/eslint-rules",
+      "architect": {
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "outputs": ["coverage/tools/eslint-rules"],
+          "options": {
+            "jestConfig": "tools/eslint-rules/jest.config.ts",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "myzwitserleven-app": {
+      "root": "apps/myzwitserleven-app",
+      "projectType": "application",
+      "sourceRoot": "apps/myzwitserleven-app/src",
+      "prefix": "athora-nx-scripted",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/apps/myzwitserleven-app",
+            "index": "apps/myzwitserleven-app/src/index.html",
+            "main": "apps/myzwitserleven-app/src/main.ts",
+            "polyfills": "apps/myzwitserleven-app/src/polyfills.ts",
+            "tsConfig": "apps/myzwitserleven-app/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "apps/myzwitserleven-app/src/favicon.ico",
+              "apps/myzwitserleven-app/src/assets"
+            ],
+            "styles": ["apps/myzwitserleven-app/src/styles.scss"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "apps/myzwitserleven-app/src/environments/environment.ts",
+                  "with": "apps/myzwitserleven-app/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production",
+          "dependsOn": ["^build"]
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "myzwitserleven-app:build:production"
+            },
+            "development": {
+              "browserTarget": "myzwitserleven-app:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "myzwitserleven-app:build"
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "options": {
+            "lintFilePatterns": [
+              "apps/myzwitserleven-app/**/*.ts",
+              "apps/myzwitserleven-app/**/*.html"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "outputs": ["coverage/apps/myzwitserleven-app"],
+          "options": {
+            "jestConfig": "apps/myzwitserleven-app/jest.config.ts",
+            "passWithNoTests": true
+          }
+        },
+        "stylelint": {
+          "builder": "nx-stylelint:lint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["apps/myzwitserleven-app/**/*.css"]
+          }
+        }
+      },
+      "tags": [],
+      "files": [
+        {
+          "file": "apps/myzwitserleven-app/.browserslistrc",
+          "hash": "4f9ac26980c156a3d525267010d5f78144b43519"
+        },
+        {
+          "file": "apps/myzwitserleven-app/.eslintrc.json",
+          "hash": "dda4c13b8ac1f90f7ebe69f171fd68c929c71cca"
+        },
+        {
+          "file": "apps/myzwitserleven-app/jest.config.ts",
+          "hash": "e576d0795bfb1aec62aff2c2692636fc9b78f107"
+        },
+        {
+          "file": "apps/myzwitserleven-app/project.json",
+          "hash": "10a80bae2131ffe58ab9fc2bf3823b56dcf35692"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/app/app.component.html",
+          "hash": "f4f428398aef500e925f2404f1a16d5741912e79"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/app/app.component.scss",
+          "hash": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/app/app.component.spec.ts",
+          "hash": "328b01fd52c82a4c827f95d67862d5dfdb135d42",
+          "deps": ["npm:@angular/core"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/app/app.component.ts",
+          "hash": "ff7f8bd01970603f3a973d5c8928eb25eabe5abd",
+          "deps": ["npm:@angular/core"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/app/app.module.ts",
+          "hash": "ca4cff2f830a9ae53ecd2ee9e5ecff7282c211f6",
+          "deps": ["npm:@angular/core", "npm:@angular/platform-browser"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/app/nx-welcome.component.ts",
+          "hash": "82737d9b13e4a8428a2c2142f8995a16d783b283",
+          "deps": ["npm:@angular/core"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/assets/.gitkeep",
+          "hash": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/environments/environment.prod.ts",
+          "hash": "c9669790be176ac85a5d8c11278875c2f52dc507"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/environments/environment.ts",
+          "hash": "66998ae9a7c27359bc473c6d2aa0029dd1f4b700"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/favicon.ico",
+          "hash": "317ebcb2336e0833a22dddf0ab287849f26fda57"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/index.html",
+          "hash": "f439cef4d6948f902dca1805783c3e55d56e1d46"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/main.ts",
+          "hash": "d9a2e7e4a582e265db779363bd8b2492c43c141b",
+          "deps": ["npm:@angular/core", "npm:@angular/platform-browser-dynamic"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/polyfills.ts",
+          "hash": "e4555ed11fa2f217b8e4c744d564da4f7388b4c4",
+          "deps": ["npm:zone.js"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/styles.scss",
+          "hash": "90d4ee0072ce3fc41812f8af910219f9eea3c3de"
+        },
+        {
+          "file": "apps/myzwitserleven-app/src/test-setup.ts",
+          "hash": "1100b3e8a6ed08f4b5c27a96471846d57023c320",
+          "deps": ["npm:jest-preset-angular"]
+        },
+        {
+          "file": "apps/myzwitserleven-app/tsconfig.app.json",
+          "hash": "915ae8b2fbf62700c36dfb72cfd6252d9dae8d0a"
+        },
+        {
+          "file": "apps/myzwitserleven-app/tsconfig.editor.json",
+          "hash": "20c4afdbf437457984afcb236d4b5e588aec858a"
+        },
+        {
+          "file": "apps/myzwitserleven-app/tsconfig.json",
+          "hash": "c756d84676bd8d116ad9dc12a173b10c44b4955f"
+        },
+        {
+          "file": "apps/myzwitserleven-app/tsconfig.spec.json",
+          "hash": "c5db02778f96a2a200d787c0a7b376fe0d6c36f7"
+        }
+      ]
+    },
+    "myzwitserleven-app-e2e": {
+      "root": "apps/myzwitserleven-app-e2e",
+      "$schema": "../../node_modules/nx/schemas/project-schema.json",
+      "sourceRoot": "apps/myzwitserleven-app-e2e/src",
+      "projectType": "application",
+      "architect": {
+        "e2e": {
+          "builder": "@nrwl/cypress:cypress",
+          "options": {
+            "cypressConfig": "apps/myzwitserleven-app-e2e/cypress.config.ts",
+            "devServerTarget": "myzwitserleven-app:serve:development",
+            "testingType": "e2e"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "myzwitserleven-app:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["apps/myzwitserleven-app-e2e/**/*.{js,ts}"]
+          }
+        }
+      },
+      "tags": [],
+      "implicitDependencies": ["myzwitserleven-app"],
+      "files": [
+        {
+          "file": "apps/myzwitserleven-app-e2e/.eslintrc.json",
+          "hash": "4c5989b23b5aa8cc7aba2a07d1ae7daee19c1555"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/cypress.config.ts",
+          "hash": "22f7c84eb637d4f23447fcb59dee130dd25b2de0",
+          "deps": ["npm:cypress", "npm:@nrwl/cypress"]
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/project.json",
+          "hash": "d1b51a4a24a6af8c5d0a221c7d33a0c4b3904537"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/src/e2e/app.cy.ts",
+          "hash": "6b9550996d5e31ac6d332dee8d403cf2a4edaa6c"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/src/fixtures/example.json",
+          "hash": "294cbed6ce9e0b948b787452e8676aee486cb3be"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/src/support/app.po.ts",
+          "hash": "32934246969c2ecb827ac05677785933a707a54d"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/src/support/commands.ts",
+          "hash": "310f1fa0e043ffebbbcf575c5a4d17f13a6b14d6"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/src/support/e2e.ts",
+          "hash": "3d469a6b6cf31eb66117d73e278bcf74f398f1db"
+        },
+        {
+          "file": "apps/myzwitserleven-app-e2e/tsconfig.json",
+          "hash": "9e27f75c6fadf5f6175f48ca953d551089aef787"
+        }
+      ]
+    },
+    "shared-components": {
+      "projectType": "library",
+      "root": "libs/shared-components",
+      "sourceRoot": "libs/shared-components/src",
+      "prefix": "athora-nx-scripted",
+      "architect": {
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "outputs": ["coverage/libs/shared-components"],
+          "options": {
+            "jestConfig": "libs/shared-components/jest.config.ts",
+            "passWithNoTests": true
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "options": {
+            "lintFilePatterns": [
+              "libs/shared-components/**/*.ts",
+              "libs/shared-components/**/*.html"
+            ]
+          }
+        },
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            "port": 4400,
+            "configDir": "libs/shared-components/.storybook",
+            "browserTarget": "shared-components:build-storybook",
+            "compodoc": false
+          },
+          "configurations": {
+            "ci": {
+              "quiet": true
+            }
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "outputs": ["{options.outputDir}"],
+          "options": {
+            "outputDir": "dist/storybook/shared-components",
+            "configDir": "libs/shared-components/.storybook",
+            "browserTarget": "shared-components:build-storybook",
+            "compodoc": false
+          },
+          "configurations": {
+            "ci": {
+              "quiet": true
+            }
+          }
+        }
+      },
+      "tags": []
+    }
+  },
+  "version": 1
+}
